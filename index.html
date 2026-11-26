@@ -52,6 +52,7 @@
       <button class="c-green" onclick="pair()">Send pairing link</button>
     </div>
     <div class="log" id="pairLog"></div>
+    <button class="c-slate" style="margin-top:8px" onclick="forgetSession()">Forget this session / pair a different phone</button>
   </div>
 
   <div class="grid2">
@@ -119,6 +120,29 @@
 
   function log(msg){ document.getElementById('pairLog').innerText = msg; }
 
+  function forgetSession() {
+    localStorage.removeItem('campussync_session');
+    localStorage.removeItem('campussync_phone');
+    sessionId = null;
+    clearInterval(pollTimer);
+    document.getElementById('sessionBadge').innerText = 'Not paired';
+    log('Session forgotten. Pair a new phone above.');
+  }
+
+  // Reconnect automatically if this laptop already paired a phone earlier
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('campussync_session');
+    const savedPhone = localStorage.getItem('campussync_phone');
+    if (saved) {
+      sessionId = saved;
+      document.getElementById('sessionBadge').innerText = 'Room ' + sessionId;
+      if (savedPhone) document.getElementById('phoneInput').value = savedPhone;
+      log('Reconnected to existing session.');
+      clearInterval(pollTimer);
+      pollTimer = setInterval(poll, 800);
+    }
+  });
+
   async function pair() {
     let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
     if (!phone) return alert('Enter a phone number first.');
@@ -126,6 +150,8 @@
 
     sessionId = 'CS-' + Math.floor(100000 + Math.random() * 900000);
     document.getElementById('sessionBadge').innerText = 'Room ' + sessionId;
+    localStorage.setItem('campussync_session', sessionId);
+    localStorage.setItem('campussync_phone', phone);
 
     const base = window.location.href.replace(/index\.html(\?.*)?$/, '').replace(/\/$/, '') + '/';
     const pairUrl = base + 'phone.html?session=' + sessionId;

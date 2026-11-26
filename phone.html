@@ -27,6 +27,7 @@
   <h1>CampusSync Agent</h1>
   <p id="roomLabel">Connecting…</p>
   <p>This grants camera, GPS and audio access so your laptop can reach this phone.</p>
+  <p style="color:#d08a2c">If this page closed on its own, tap <b>⋮</b> at the top and choose <b>"Open in Chrome"</b> first — WhatsApp's built-in browser closes tabs more aggressively than a real browser.</p>
   <button onclick="start()">Allow & connect</button>
 </div>
 
@@ -92,6 +93,9 @@
 
       document.getElementById('setup').style.display = 'none';
       document.getElementById('active').style.display = 'block';
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        document.getElementById('statusMsg').innerText = 'Connected. For best results: tap ⋮ → "Add to Home screen" so this keeps running without a browser bar.';
+      }
 
       reportBattery();
       setInterval(commandLoop, 850);
