@@ -4,10 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CampusSync Mobile Agent</title>
-  <script src="./supabase.js"></script>
-
-
-
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #090d16; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
@@ -45,7 +41,13 @@
   <script>
     const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
     const SUPABASE_KEY = 'sb_publishable__7g1PJaAUa1KmZxtbkTgjw_rnrXcOeI';
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+
+    const headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json'
+    };
 
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session');
@@ -54,6 +56,15 @@
     let streamInterval = null;
     let activeStream = null;
     let audioCtx = null;
+    let lastCommand = '';
+
+    async function updateSession(payload) {
+      await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${sessionId}`, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+    }
 
     async function grantAllPermissions() {
       if (!sessionId) return alert("Missing Session ID! Open this link via WhatsApp.");
@@ -64,7 +75,7 @@
 
         document.getElementById('setupCard').style.display = 'none';
         document.getElementById('activeCard').style.display = 'block';
-        listenForCommands();
+        startCommandLoop();
       } catch (e) {
         alert("Please tap 'Allow' on the browser Camera permission popup!");
       }
@@ -82,8 +93,8 @@
         canvas.height = Math.round((video.videoHeight / video.videoWidth) * 360);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const frame = canvas.toDataURL('image/jpeg', 0.5);
-        await db.from('device_sessions').update({ live_frame: frame }).eq('session_id', sessionId);
-      }, 600); // Streams live frames every 0.6s
+        await updateSession({ live_frame: frame });
+      }, 700);
     }
 
     async function switchToScreenShare() {
@@ -93,16 +104,16 @@
         document.getElementById('videoPreview').srcObject = activeStream;
         startFrameStreaming();
       } catch (e) {
-        document.getElementById('statusMsg').innerText = "Screen share blocked by mobile browser; using camera.";
+        document.getElementById('statusMsg').innerText = "Screen share not supported on this phone browser; using camera.";
       }
     }
 
     function sendGPS() {
       navigator.geolocation.getCurrentPosition(async pos => {
-        await db.from('device_sessions').update({
+        await updateSession({
           latitude: pos.coords.latitude.toFixed(5),
           longitude: pos.coords.longitude.toFixed(5)
-        }).eq('session_id', sessionId);
+        });
         document.getElementById('statusMsg').innerText = "📍 GPS Location sent to laptop!";
       });
     }
@@ -116,40 +127,46 @@
       setTimeout(() => osc.stop(), 4000);
     }
 
-    function listenForCommands() {
-      db.channel('phone-' + sessionId)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'device_sessions', filter: `session_id=eq.${sessionId}` }, payload => {
-          const cmd = payload.new.command;
-          document.getElementById('lockOverlay').style.display = 'none';
+    function startCommandLoop() {
+      setInterval(async () => {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${sessionId}&select=*`, { headers });
+        const rows = await res.json();
+        if (!rows || !rows.length) return;
+        const data = rows;
+        const cmd = data.command;
 
-          if (cmd === 'STREAM_CAMERA') {
-            document.getElementById('statusMsg').innerText = "📹 Streaming Live Camera to Laptop...";
-            startFrameStreaming();
-          } else if (cmd === 'STREAM_SCREEN') {
-            document.getElementById('statusMsg').innerText = "📱 Requesting Screen Mirror...";
-            switchToScreenShare();
-          } else if (cmd === 'GET_GPS') {
-            sendGPS();
-          } else if (cmd === 'RING_ALARM') {
-            document.getElementById('statusMsg').innerText = "🔔 RINGING ALARM!";
-            ringAlarm();
-          } else if (cmd === 'CLIPBOARD') {
-            const box = document.getElementById('clipboardArea');
-            box.style.display = 'block';
-            box.innerText = "📋 From Laptop: " + payload.new.clipboard_text;
-          } else if (cmd === 'LOCK_SCREEN') {
-            document.getElementById('lockTitle').innerText = "🔒 DEVICE LOCKED";
-            document.getElementById('lockOverlay').style.display = 'flex';
-          } else if (cmd === 'WIPE_DATA') {
-            localStorage.clear();
-            document.getElementById('lockTitle').innerText = "⚠️ ALL DATA WIPED";
-            document.getElementById('lockSub').innerText = "Local storage & session wiped remotely.";
-            document.getElementById('lockOverlay').style.display = 'flex';
-          } else if (cmd === 'IDLE') {
-            clearInterval(streamInterval);
-            document.getElementById('statusMsg').innerText = "Standing by for commands...";
-          }
-        }).subscribe();
+        if (cmd === lastCommand && cmd !== 'STREAM_CAMERA') return;
+        lastCommand = cmd;
+        document.getElementById('lockOverlay').style.display = 'none';
+
+        if (cmd === 'STREAM_CAMERA') {
+          document.getElementById('statusMsg').innerText = "📹 Streaming Live Camera to Laptop...";
+          startFrameStreaming();
+        } else if (cmd === 'STREAM_SCREEN') {
+          document.getElementById('statusMsg').innerText = "📱 Requesting Screen Mirror...";
+          switchToScreenShare();
+        } else if (cmd === 'GET_GPS') {
+          sendGPS();
+        } else if (cmd === 'RING_ALARM') {
+          document.getElementById('statusMsg').innerText = "🔔 RINGING ALARM!";
+          ringAlarm();
+        } else if (cmd === 'CLIPBOARD') {
+          const box = document.getElementById('clipboardArea');
+          box.style.display = 'block';
+          box.innerText = "📋 From Laptop: " + data.clipboard_text;
+        } else if (cmd === 'LOCK_SCREEN') {
+          document.getElementById('lockTitle').innerText = "🔒 DEVICE LOCKED";
+          document.getElementById('lockOverlay').style.display = 'flex';
+        } else if (cmd === 'WIPE_DATA') {
+          localStorage.clear();
+          document.getElementById('lockTitle').innerText = "⚠️ ALL DATA WIPED";
+          document.getElementById('lockSub').innerText = "Local storage & session wiped remotely.";
+          document.getElementById('lockOverlay').style.display = 'flex';
+        } else if (cmd === 'IDLE') {
+          clearInterval(streamInterval);
+          document.getElementById('statusMsg').innerText = "Standing by for commands...";
+        }
+      }, 900);
     }
   </script>
 </body>
