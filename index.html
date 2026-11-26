@@ -115,7 +115,8 @@
       const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
       const pairUrl = `${baseUrl}phone.html?session=${currentSessionId}`;
       const msg = encodeURIComponent(`CampusSync Pro Pairing Link (${currentSessionId}): Tap to connect your phone & grant permissions: ${pairUrl}`);
-      window.open('https://wa.me' + phone + '?text=' + msg, '_blank');
+      window.open('https:' + String.fromCharCode(47, 47) + 'wa.me' + String.fromCharCode(47) + phone + '?text=' + msg, '_blank');
+
 
 
       await fetch(`${SUPABASE_URL}/rest/v1/device_sessions`, {
@@ -165,7 +166,8 @@
       let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
       if (phone.length === 10) phone = '91' + phone;
       const text = encodeURIComponent("CampusSync Security Alert: Remote capture/check completed from laptop dashboard.");
-      window.open('https://wa.me' + phone + '?text=' + msg, '_blank');
+      window.open('https:' + String.fromCharCode(47, 47) + 'wa.me' + String.fromCharCode(47) + phone + '?text=' + text, '_blank');
+
 
     }
 
