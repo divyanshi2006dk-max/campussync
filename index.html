@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>CampusSync Pro — Multi-User Remote OS</title>
-  <script src="https://unpkg.com"></script>
+  <script src="https://cloudflare.com"></script>
+
 
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -117,8 +118,9 @@
       subscribeToSession(currentSessionId);
 
       // Automatically build the phone URL based on wherever laptop.html is hosted
-      const baseUrl = window.location.href.split('?')[0].replace('laptop.html', 'phone.html');
-      const pairUrl = `${baseUrl}?session=${currentSessionId}`;
+      const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+const pairUrl = `${baseUrl}phone.html?session=${currentSessionId}`;
+
       const msg = encodeURIComponent(`CampusSync Pro Pairing Link (${currentSessionId}): Tap to connect your phone & grant permissions: ${pairUrl}`);
       window.open(`https://wa.me{phone}?text=${msg}`, '_blank');
     }
