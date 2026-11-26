@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusSync Mobile Agent</title>
+  <script src="https://jsdelivr.net"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #090d16; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
+    .card { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 16px; width: 100%; max-width: 380px; }
+    h1 { color: #38bdf8; margin-top: 0; font-size: 24px; }
+    p { color: #94a3b8; font-size: 14px; line-height: 1.5; }
+    button { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 12px; }
+    video { width: 100%; border-radius: 12px; border: 1px solid #334155; margin-top: 12px; background: #000; }
+    .clip-box { background: #090d16; border: 1px solid #38bdf8; padding: 12px; border-radius: 8px; margin-top: 14px; font-size: 13px; word-break: break-word; }
+    .overlay { position: fixed; inset: 0; background: #7f1d1d; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; z-index: 99; }
+  </style>
+</head>
+<body>
+
+  <div id="setupCard" class="card">
+    <h1>CampusSync Agent</h1>
+    <p id="roomLabel">Connecting to session...</p>
+    <p>Tap below to grant Camera, Audio, GPS & Screen Mirroring permissions to link with your laptop.</p>
+    <button onclick="grantAllPermissions()">✅ Allow All & Link Device</button>
+  </div>
+
+  <div id="activeCard" class="card" style="display:none;">
+    <div style="color:#34d399; font-weight:bold;">● Connected to Laptop</div>
+    <p id="statusMsg">Standing by for commands...</p>
+    <video id="videoPreview" autoplay playsinline muted></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <div id="clipboardArea" class="clip-box" style="display:none;"></div>
+  </div>
+
+  <div id="lockOverlay" class="overlay">
+    <h1 id="lockTitle" style="color:white; font-size:32px;">🔒 LOCKED</h1>
+    <p id="lockSub" style="color:#fecaca;">Remotely locked from CampusSync Laptop OS.</p>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__7g1PJaAUa1KmZxtbkTgjw_rnrXcOeI';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session');
+    document.getElementById('roomLabel').innerText = sessionId ? `Session ID: ${sessionId}` : '⚠️ Open this link from WhatsApp!';
+
+    let streamInterval = null;
+    let activeStream = null;
+    let audioCtx = null;
+
+    async function grantAllPermissions() {
+      if (!sessionId) return alert("Missing Session ID! Open this link via WhatsApp.");
+      try {
+        activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+        document.getElementById('videoPreview').srcObject = activeStream;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        document.getElementById('setupCard').style.display = 'none';
+        document.getElementById('activeCard').style.display = 'block';
+        listenForCommands();
+      } catch (e) {
+        alert("Please tap 'Allow' on the browser Camera permission popup!");
+      }
+    }
+
+    function startFrameStreaming() {
+      clearInterval(streamInterval);
+      const video = document.getElementById('videoPreview');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      streamInterval = setInterval(async () => {
+        if (!video.videoWidth) return;
+        canvas.width = 360;
+        canvas.height = Math.round((video.videoHeight / video.videoWidth) * 360);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = canvas.toDataURL('image/jpeg', 0.5);
+        await db.from('device_sessions').update({ live_frame: frame }).eq('session_id', sessionId);
+      }, 600); // Streams live frames every 0.6s
+    }
+
+    async function switchToScreenShare() {
+      try {
+        if (activeStream) activeStream.getTracks().forEach(t => t.stop());
+        activeStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        document.getElementById('videoPreview').srcObject = activeStream;
+        startFrameStreaming();
+      } catch (e) {
+        document.getElementById('statusMsg').innerText = "Screen share blocked by mobile browser; using camera.";
+      }
+    }
+
+    function sendGPS() {
+      navigator.geolocation.getCurrentPosition(async pos => {
+        await db.from('device_sessions').update({
+          latitude: pos.coords.latitude.toFixed(5),
+          longitude: pos.coords.longitude.toFixed(5)
+        }).eq('session_id', sessionId);
+        document.getElementById('statusMsg').innerText = "📍 GPS Location sent to laptop!";
+      });
+    }
+
+    function ringAlarm() {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+      osc.connect(audioCtx.destination);
+      osc.start();
+      setTimeout(() => osc.stop(), 4000);
+    }
+
+    function listenForCommands() {
+      db.channel('phone-' + sessionId)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'device_sessions', filter: `session_id=eq.${sessionId}` }, payload => {
+          const cmd = payload.new.command;
+          document.getElementById('lockOverlay').style.display = 'none';
+
+          if (cmd === 'STREAM_CAMERA') {
+            document.getElementById('statusMsg').innerText = "📹 Streaming Live Camera to Laptop...";
+            startFrameStreaming();
+          } else if (cmd === 'STREAM_SCREEN') {
+            document.getElementById('statusMsg').innerText = "📱 Requesting Screen Mirror...";
+            switchToScreenShare();
+          } else if (cmd === 'GET_GPS') {
+            sendGPS();
+          } else if (cmd === 'RING_ALARM') {
+            document.getElementById('statusMsg').innerText = "🔔 RINGING ALARM!";
+            ringAlarm();
+          } else if (cmd === 'CLIPBOARD') {
+            const box = document.getElementById('clipboardArea');
+            box.style.display = 'block';
+            box.innerText = "📋 From Laptop: " + payload.new.clipboard_text;
+          } else if (cmd === 'LOCK_SCREEN') {
+            document.getElementById('lockTitle').innerText = "🔒 DEVICE LOCKED";
+            document.getElementById('lockOverlay').style.display = 'flex';
+          } else if (cmd === 'WIPE_DATA') {
+            localStorage.clear();
+            document.getElementById('lockTitle').innerText = "⚠️ ALL DATA WIPED";
+            document.getElementById('lockSub').innerText = "Local storage & session wiped remotely.";
+            document.getElementById('lockOverlay').style.display = 'flex';
+          } else if (cmd === 'IDLE') {
+            clearInterval(streamInterval);
+            document.getElementById('statusMsg').innerText = "Standing by for commands...";
+          }
+        }).subscribe();
+    }
+  </script>
+</body>
+</html>

