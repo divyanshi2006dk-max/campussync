@@ -94,7 +94,7 @@
 
   <script>
     const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable__7g1PJaAUa1KmZxtbkTgjw_rnrXcOeI';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxemRhY2N4bGhvaHRva21odXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MTQ2MzMsImV4cCI6MjExMTI5MDYzM30.H6jV2IyyEqzXPBXQdB_iVAbRO5kjdcBTC2ZR6wsLxsQ';
     let currentSessionId = null;
     let pollTimer = null;
 
@@ -115,7 +115,8 @@
       const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
       const pairUrl = `${baseUrl}phone.html?session=${currentSessionId}`;
       const msg = encodeURIComponent(`CampusSync Pro Pairing Link (${currentSessionId}): Tap to connect your phone & grant permissions: ${pairUrl}`);
-      window.open(`https://wa.me{phone}?text=${msg}`, '_blank');
+      window.open('https://wa.me' + phone + '?text=' + msg, '_blank');
+
 
       await fetch(`${SUPABASE_URL}/rest/v1/device_sessions`, {
         method: 'POST',
@@ -164,7 +165,8 @@
       let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
       if (phone.length === 10) phone = '91' + phone;
       const text = encodeURIComponent("CampusSync Security Alert: Remote capture/check completed from laptop dashboard.");
-      window.open(`https://wa.me{phone}?text=${text}`, '_blank');
+      window.open('https://wa.me' + phone + '?text=' + msg, '_blank');
+
     }
 
     function startPolling() {
@@ -173,7 +175,7 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${currentSessionId}&select=*`, { headers });
         const rows = await res.json();
         if (!rows || !rows.length) return;
-        const data = rows;
+        const data = rows[0];
 
         if (data.live_frame) {
           const img = document.getElementById('liveDisplay');

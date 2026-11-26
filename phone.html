@@ -40,7 +40,7 @@
 
   <script>
     const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable__7g1PJaAUa1KmZxtbkTgjw_rnrXcOeI';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxemRhY2N4bGhvaHRva21odXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MTQ2MzMsImV4cCI6MjExMTI5MDYzM30.H6jV2IyyEqzXPBXQdB_iVAbRO5kjdcBTC2ZR6wsLxsQ';
     
 
     const headers = {
@@ -132,7 +132,7 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${sessionId}&select=*`, { headers });
         const rows = await res.json();
         if (!rows || !rows.length) return;
-        const data = rows;
+        const data = rows[0];
         const cmd = data.command;
 
         if (cmd === lastCommand && cmd !== 'STREAM_CAMERA') return;
