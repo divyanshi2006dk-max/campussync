@@ -1,198 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CampusSync Pro — Multi-User Remote OS</title>
-  <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-    body { background: #090d16; color: #f8fafc; margin: 0; padding: 24px; }
-    .container { max-width: 1100px; margin: auto; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 24px; }
-    h1 { color: #38bdf8; margin: 0; font-size: 26px; }
-    .subtitle { color: #94a3b8; font-size: 13px; }
-    .status-pill { background: #064e3b; color: #34d399; padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 600; }
-    .card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
-    .card h2 { margin: 0 0 14px 0; font-size: 15px; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
-    .row { display: flex; gap: 10px; }
-    input, textarea { width: 100%; background: #090d16; border: 1px solid #374151; color: white; padding: 12px; border-radius: 8px; font-size: 14px; }
-    button { border: none; color: white; padding: 12px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.15s; white-space: nowrap; }
-    button:hover { filter: brightness(1.15); }
-    .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; }
-    .btn-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .bg-green { background: #16a34a; }
-    .bg-blue { background: #2563eb; }
-    .bg-indigo { background: #4f46e5; }
-    .bg-amber { background: #d97706; }
-    .bg-purple { background: #7c3aed; }
-    .bg-red { background: #dc2626; }
-    .bg-slate { background: #334155; }
-    .screen-box { background: #000; border: 2px solid #1f2937; border-radius: 12px; height: 340px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 12px; }
-    .screen-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .placeholder { color: #64748b; font-size: 14px; text-align: center; padding: 20px; }
-    .gps-box { background: #090d16; padding: 12px; border-radius: 8px; border: 1px solid #1f2937; font-size: 13px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
-    a { color: #38bdf8; text-decoration: none; font-weight: 600; }
-  </style>
+<meta charset="UTF-8">
+<title>CampusSync — Remote Student Phone Dashboard</title>
+<style>
+  :root{
+    --bg:#0b0f16; --panel:#121826; --border:#232c3d; --text:#f1f5f9; --muted:#8b96a8;
+    --accent:#4f9dde; --green:#2fae66; --amber:#d08a2c; --red:#d14f4f; --slate:#3a4457;
+  }
+  *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+  body{background:var(--bg);color:var(--text);margin:0;padding:28px}
+  .wrap{max-width:1040px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:22px}
+  h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-0.2px}
+  .tag{color:var(--muted);font-size:13px;margin-top:4px}
+  .status{background:#132a1f;color:#4ade80;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
+  .card h2{margin:0 0 12px;font-size:12px;letter-spacing:.4px;color:var(--muted);text-transform:uppercase}
+  .row{display:flex;gap:8px}
+  input,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:7px;font-size:14px}
+  button{border:none;color:white;padding:10px 14px;border-radius:7px;font-weight:600;font-size:13px;cursor:pointer}
+  button:hover{filter:brightness(1.12)}
+  button:active{filter:brightness(0.92)}
+  .grid2{display:grid;grid-template-columns:1fr 1.15fr;gap:16px}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .full{width:100%}
+  .c-green{background:var(--green)} .c-blue{background:var(--accent)}
+  .c-amber{background:var(--amber)} .c-red{background:var(--red)} .c-slate{background:var(--slate)}
+  .feed{background:#000;border:1px solid var(--border);border-radius:9px;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:10px}
+  .feed img{max-width:100%;max-height:100%;object-fit:contain}
+  .placeholder{color:#55617a;font-size:13px;text-align:center;padding:20px}
+  .gps{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);padding:9px 12px;border-radius:7px;font-size:13px;margin-top:10px}
+  a{color:var(--accent);text-decoration:none;font-weight:600}
+  .log{font-size:12px;color:var(--muted);margin-top:10px;min-height:16px}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div>
-        <h1>CampusSync Pro</h1>
-        <div class="subtitle">Multi-User Remote Smartphone Control, Screen Mirroring & Anti-Theft Suite</div>
-      </div>
-      <div class="status-pill" id="sessionBadge">Session: Not Paired</div>
-    </header>
-
-    <div class="card">
-      <h2>1. Connect Any Student Smartphone</h2>
-      <div class="row">
-        <input id="phoneInput" type="text" placeholder="Enter any WhatsApp number (e.g., 919876543210)">
-        <button class="bg-green" onclick="createSessionAndSendWhatsApp()">📲 Generate & Send WhatsApp Link</button>
-      </div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>CampusSync Dashboard</h1>
+      <div class="tag">Pair a phone, then control it from here</div>
     </div>
+    <div class="status" id="sessionBadge">Not paired</div>
+  </header>
 
-    <div class="grid">
-      <div>
-        <div class="card">
-          <h2>2. Remote Control & Anti-Theft</h2>
-          <div class="btn-list">
-            <button class="bg-blue" onclick="sendCommand('STREAM_CAMERA')">📹 Live Camera Feed</button>
-            <button class="bg-indigo" onclick="sendCommand('STREAM_SCREEN')">📱 Live Screen Mirror</button>
-            <button class="bg-amber" onclick="sendCommand('RING_ALARM')">🔔 Ring Max Volume</button>
-            <button class="bg-purple" onclick="sendCommand('GET_GPS')">📍 Locate via GPS</button>
-            <button class="bg-red" onclick="sendCommand('LOCK_SCREEN')">🔒 Remote Lock</button>
-            <button class="bg-red" onclick="confirmWipe()">⚠️ Wipe All Data</button>
-          </div>
-          <button class="bg-slate" style="width:100%; margin-top:10px;" onclick="sendCommand('IDLE')">⏹ Stop Stream / Reset</button>
+  <div class="card">
+    <h2>1 · Pair a phone</h2>
+    <div class="row">
+      <input id="phoneInput" placeholder="WhatsApp number with country code, e.g. 9198XXXXXXXX">
+      <button class="c-green" onclick="pair()">Send pairing link</button>
+    </div>
+    <div class="log" id="pairLog"></div>
+  </div>
 
-          <div class="gps-box">
-            <span id="gpsText">📍 GPS Location: Waiting for request...</span>
-            <a id="mapsLink" href="#" target="_blank" style="display:none;">Open Google Maps ↗</a>
-          </div>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2>2 · Controls</h2>
+        <div class="btns">
+          <button class="c-blue" onclick="cmd('STREAM_CAMERA')">📹 Start camera</button>
+          <button class="c-slate" onclick="cmd('FLIP_CAMERA')">🔄 Flip camera</button>
+          <button class="c-amber" onclick="cmd('TORCH_ON')">🔦 Torch on</button>
+          <button class="c-slate" onclick="cmd('TORCH_OFF')">🔦 Torch off</button>
+          <button class="c-amber" onclick="cmd('RING_ALARM')">🔔 Ring phone</button>
+          <button class="c-blue" onclick="cmd('GET_GPS')">📍 Locate</button>
+          <button class="c-red" onclick="cmd('LOCK_SCREEN')">🔒 Lock</button>
+          <button class="c-red" onclick="wipe()">⚠️ Wipe</button>
         </div>
-
-        <div class="card">
-          <h2>3. Instant Study Clipboard Sync</h2>
-          <textarea id="clipInput" rows="2" placeholder="Paste study notes, links, or assignment text to push to phone..."></textarea>
-          <button class="bg-blue" style="width:100%; margin-top:10px;" onclick="pushClipboard()">⚡ Push Text to Phone Clipboard</button>
+        <button class="c-slate full" style="margin-top:8px" onclick="stopAll()">⏹ Stop / reset</button>
+        <div class="gps">
+          <span id="gpsText">GPS: not requested</span>
+          <a id="mapsLink" href="#" target="_blank" style="display:none">Open map ↗</a>
         </div>
       </div>
 
       <div class="card">
-        <h2>4. Live Phone Display & Camera</h2>
-        <div class="screen-box">
-          <img id="liveDisplay" style="display:none;">
-          <div id="placeholderText" class="placeholder">Pair your phone via WhatsApp, then click <b>Live Camera Feed</b> or <b>Live Screen Mirror</b>.</div>
+        <h2>3 · Send to phone</h2>
+        <div class="row" style="margin-bottom:8px">
+          <input id="speakInput" placeholder="Text for the phone to speak">
+          <button class="c-blue" onclick="speak()">Speak</button>
         </div>
         <div class="row">
-          <button class="bg-blue" style="flex:1;" onclick="downloadScreenshot()">📸 Save Screenshot to Laptop</button>
-          <button class="bg-green" style="flex:1;" onclick="forwardWhatsApp()">📤 Share Alert on WhatsApp</button>
+          <input id="noteInput" placeholder="Note to show on phone screen">
+          <button class="c-blue" onclick="pushNote()">Send</button>
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <h2>4 · Live camera</h2>
+      <div class="feed">
+        <img id="liveImg" style="display:none">
+        <div id="placeholder" class="placeholder">Pair a phone, then click Start camera</div>
+      </div>
+      <div class="row">
+        <button class="c-blue full" onclick="saveScreenshot()">📸 Save screenshot</button>
+        <button class="c-green full" onclick="shareWhatsApp()">📤 Alert on WhatsApp</button>
+      </div>
+    </div>
   </div>
+</div>
 
-  <script>
-    const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxemRhY2N4bGhvaHRva21odXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MTQ2MzMsImV4cCI6MjExMTI5MDYzM30.H6jV2IyyEqzXPBXQdB_iVAbRO5kjdcBTC2ZR6wsLxsQ';
-    let currentSessionId = null;
-    let pollTimer = null;
+<script>
+  // --- Supabase project (REST API, no SDK needed) ---
+  const SUPABASE_URL = 'https://uqzdaccxlhohtokmhuwt.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxemRhY2N4bGhvaHRva21odXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MTQ2MzMsImV4cCI6MjExMTI5MDYzM30.H6jV2IyyEqzXPBXQdB_iVAbRO5kjdcBTC2ZR6wsLxsQ';
 
-    const headers = {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json'
-    };
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  };
 
-    async function createSessionAndSendWhatsApp() {
-      let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
-      if (!phone) return alert("Please enter a phone number!");
-      if (phone.length === 10) phone = '91' + phone;
+  let sessionId = null;
+  let pollTimer = null;
+  let stopped = false;
 
-      currentSessionId = 'CS-' + Math.floor(100000 + Math.random() * 900000);
-      document.getElementById('sessionBadge').innerText = '● Active Room: ' + currentSessionId;
+  function log(msg){ document.getElementById('pairLog').innerText = msg; }
 
-      const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-      const pairUrl = `${baseUrl}phone.html?session=${currentSessionId}`;
-      const msg = encodeURIComponent(`CampusSync Pro Pairing Link (${currentSessionId}): Tap to connect your phone & grant permissions: ${pairUrl}`);
-      window.open('https:' + String.fromCharCode(47, 47) + 'wa.me' + String.fromCharCode(47) + phone + '?text=' + msg, '_blank');
+  async function pair() {
+    let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
+    if (!phone) return alert('Enter a phone number first.');
+    if (phone.length === 10) phone = '91' + phone;
 
+    sessionId = 'CS-' + Math.floor(100000 + Math.random() * 900000);
+    document.getElementById('sessionBadge').innerText = 'Room ' + sessionId;
 
+    const base = window.location.href.replace(/index\.html(\?.*)?$/, '').replace(/\/$/, '') + '/';
+    const pairUrl = base + 'phone.html?session=' + sessionId;
+    const msg = encodeURIComponent('CampusSync pairing link: ' + pairUrl);
+    window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
 
-      await fetch(`${SUPABASE_URL}/rest/v1/device_sessions`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ session_id: currentSessionId, phone_number: phone })
-      });
+    await fetch(SUPABASE_URL + '/rest/v1/device_sessions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ session_id: sessionId, phone_number: phone })
+    });
 
-      startPolling();
+    log('Session created. Waiting for phone to connect…');
+    clearInterval(pollTimer);
+    pollTimer = setInterval(poll, 800);
+  }
+
+  async function patch(obj) {
+    if (!sessionId) { alert('Pair a phone first.'); return; }
+    await fetch(SUPABASE_URL + '/rest/v1/device_sessions?session_id=eq.' + sessionId, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(obj)
+    });
+  }
+
+  function cmd(c) { stopped = false; patch({ command: c }); }
+
+  function speak() {
+    const t = document.getElementById('speakInput').value.trim();
+    if (t) patch({ clipboard_text: 'SPEAK::' + t, command: 'SPEAK_' + Date.now() });
+  }
+
+  function pushNote() {
+    const t = document.getElementById('noteInput').value.trim();
+    if (t) patch({ clipboard_text: 'NOTE::' + t, command: 'NOTE_' + Date.now() });
+  }
+
+  async function stopAll() {
+    stopped = true;
+    const img = document.getElementById('liveImg');
+    img.style.display = 'none'; img.src = '';
+    document.getElementById('placeholder').style.display = 'block';
+    document.getElementById('placeholder').innerText = 'Stream stopped.';
+    await patch({ command: 'IDLE', live_frame: null });
+  }
+
+  function wipe() {
+    if (!sessionId) return alert('Pair a phone first.');
+    if (prompt('Enter PIN to confirm wipe:') === '1234') cmd('WIPE_DATA');
+    else alert('Incorrect PIN.');
+  }
+
+  function saveScreenshot() {
+    const img = document.getElementById('liveImg');
+    if (!img.src || img.style.display === 'none') return alert('No live feed to save.');
+    const a = document.createElement('a');
+    a.href = img.src; a.download = 'CampusSync_' + Date.now() + '.jpg'; a.click();
+  }
+
+  function shareWhatsApp() {
+    let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+    const text = encodeURIComponent('CampusSync alert: remote check completed from laptop.');
+    window.open('https://wa.me/' + phone + '?text=' + text, '_blank');
+  }
+
+  async function poll() {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/device_sessions?session_id=eq.' + sessionId + '&select=*', { headers });
+    const rows = await res.json();
+    const data = rows[0];
+    if (!data) return;
+
+    log('Connected · last update ' + new Date().toLocaleTimeString());
+
+    if (!stopped && data.live_frame) {
+      const img = document.getElementById('liveImg');
+      img.src = data.live_frame; img.style.display = 'block';
+      document.getElementById('placeholder').style.display = 'none';
     }
-
-    async function sendCommand(cmd) {
-      if (!currentSessionId) return alert("First enter a phone number and send the WhatsApp link!");
-      await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${currentSessionId}`, {
-        method: 'PATCH',
-        headers: headers,
-        body: JSON.stringify({ command: cmd })
-      });
+    if (data.latitude && data.longitude) {
+      document.getElementById('gpsText').innerText = 'GPS: ' + data.latitude + ', ' + data.longitude;
+      const link = document.getElementById('mapsLink');
+      link.href = 'https://www.google.com/maps?q=' + data.latitude + ',' + data.longitude;
+      link.style.display = 'inline';
     }
-
-    async function pushClipboard() {
-      if (!currentSessionId) return alert("Pair a phone first!");
-      const text = document.getElementById('clipInput').value;
-      await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${currentSessionId}`, {
-        method: 'PATCH',
-        headers: headers,
-        body: JSON.stringify({ clipboard_text: text, command: 'CLIPBOARD' })
-      });
-      alert("Sent to phone!");
-    }
-
-    function confirmWipe() {
-      if (!currentSessionId) return alert("Pair a phone first!");
-      if (prompt("Enter Security PIN (1234) to wipe device:") === "1234") sendCommand('WIPE_DATA');
-    }
-
-    function downloadScreenshot() {
-      const img = document.getElementById('liveDisplay');
-      if (!img.src || img.style.display === 'none') return alert("No live feed active to capture!");
-      const a = document.createElement('a');
-      a.href = img.src;
-      a.download = `CampusSync_Capture_${Date.now()}.jpg`;
-      a.click();
-    }
-
-    function forwardWhatsApp() {
-      let phone = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
-      if (phone.length === 10) phone = '91' + phone;
-      const text = encodeURIComponent("CampusSync Security Alert: Remote capture/check completed from laptop dashboard.");
-      window.open('https:' + String.fromCharCode(47, 47) + 'wa.me' + String.fromCharCode(47) + phone + '?text=' + text, '_blank');
-
-
-    }
-
-    function startPolling() {
-      clearInterval(pollTimer);
-      pollTimer = setInterval(async () => {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/device_sessions?session_id=eq.${currentSessionId}&select=*`, { headers });
-        const rows = await res.json();
-        if (!rows || !rows.length) return;
-        const data = rows[0];
-
-        if (data.live_frame) {
-          const img = document.getElementById('liveDisplay');
-          img.src = data.live_frame;
-          img.style.display = 'block';
-          document.getElementById('placeholderText').style.display = 'none';
-        }
-        if (data.latitude && data.longitude) {
-          document.getElementById('gpsText').innerText = `📍 ${data.latitude}, ${data.longitude}`;
-          const link = document.getElementById('mapsLink');
-          link.href = `https://google.com{data.latitude},${data.longitude}`;
-          link.style.display = 'inline';
-        }
-      }, 800);
-    }
-  </script>
+  }
+</script>
 </body>
 </html>

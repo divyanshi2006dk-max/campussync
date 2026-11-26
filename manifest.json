@@ -1,0 +1,8 @@
+{
+  "name": "CampusSync Mobile Agent",
+  "short_name": "CampusSync",
+  "start_url": "./phone.html",
+  "display": "standalone",
+  "background_color": "#0b0f16",
+  "theme_color": "#0b0f16"
+}
